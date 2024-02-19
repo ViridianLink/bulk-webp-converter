@@ -2,7 +2,7 @@ use libwebp_sys::{WebPPicture, WebPPictureFree};
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug)]
-pub(crate) struct ManagedPicture(pub(crate) WebPPicture);
+pub struct ManagedPicture(pub WebPPicture);
 
 impl Drop for ManagedPicture {
     fn drop(&mut self) {
