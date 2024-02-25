@@ -1,12 +1,12 @@
-use libwebp_sys::{WebPConfig, WebPImageHint};
+use crate::QUALITY;
+use webp::WebPConfig;
 
-pub fn config(quality: f32) -> WebPConfig {
-    let mut webp_config = WebPConfig::new().unwrap();
-    webp_config.quality = quality;
+pub fn config() -> WebPConfig {
+    let mut webp_config = WebPConfig::new().expect("Failed to create WebPConfig");
+    webp_config.quality = QUALITY;
     webp_config.method = 6;
-    webp_config.image_hint = WebPImageHint::WEBP_HINT_PICTURE;
 
-    if quality == 100.0 {
+    if QUALITY == 100.0 {
         webp_config.lossless = 1;
     } else {
         webp_config.near_lossless = 60;
