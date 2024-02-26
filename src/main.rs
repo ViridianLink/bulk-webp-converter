@@ -4,14 +4,18 @@ mod webp_config;
 
 use cwebp_converter::convert_with_cwebp;
 use rayon::prelude::*;
-use std::io;
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::{fs, io};
 use walkdir::{DirEntry, WalkDir};
 
-const DIRECTORY: &str = r"D:\Crimson Sky\College Kings\college-kings-2-dev\game\images\ep4";
-const QUALITY: f32 = 100.0;
+const DIRECTORY: &str = r"D:\Crimson Sky\College Kings\College-Kings\game\";
+pub const QUALITY: f32 = 100.0;
+pub const MAX_SIZE: (u32, u32) = (1920, 1080);
+// Only affects images with the same aspect ratio
+// pub const FILTER: [&str; 3] = ["png", "jpg", "jpeg"];
+pub const FILTER: [&str; 1] = ["webp"];
 
 fn run(entries: Vec<DirEntry>, converter: fn(&Path) -> Result<(), io::Error>) -> Vec<DirEntry> {
     let counter = Arc::new(AtomicUsize::new(0));
@@ -23,7 +27,12 @@ fn run(entries: Vec<DirEntry>, converter: fn(&Path) -> Result<(), io::Error>) ->
             let path = entry.path();
 
             let rv = match converter(path) {
-                Ok(_) => None,
+                Ok(_) => {
+                    if path.extension().unwrap() != "webp" {
+                        fs::remove_file(path).expect("Failed to remove file");
+                    }
+                    None
+                }
                 Err(_) => Some(entry),
             };
 
@@ -37,7 +46,14 @@ fn main() {
     let paths: Vec<DirEntry> = WalkDir::new(DIRECTORY)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().unwrap_or_default() == "webp")
+        .filter(|e| {
+            FILTER.contains(
+                &e.path()
+                    .extension()
+                    .and_then(|ext| ext.to_str())
+                    .unwrap_or_default(),
+            )
+        })
         .collect();
 
     let fails = run(paths, convert_with_cwebp);

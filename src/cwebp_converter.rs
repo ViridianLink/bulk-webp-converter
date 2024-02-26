@@ -1,4 +1,4 @@
-use crate::QUALITY;
+use crate::{MAX_SIZE, QUALITY};
 use std::io;
 use std::path::Path;
 use std::process::Command;
@@ -21,12 +21,13 @@ pub fn convert_with_cwebp(image_path: &Path) -> Result<(), io::Error> {
         let width = image.width();
         let height = image.height();
         let aspect_ratio = width as f32 / height as f32;
+        let target_aspect_ratio = MAX_SIZE.0 as f32 / MAX_SIZE.1 as f32;
 
-        if (aspect_ratio - 16f32 / 9f32).abs() < f32::EPSILON {
+        if (aspect_ratio - target_aspect_ratio).abs() < f32::EPSILON {
             command
                 .arg("-resize")
-                .arg(width.min(1920).to_string())
-                .arg(height.min(1080).to_string());
+                .arg(width.min(MAX_SIZE.0).to_string())
+                .arg(height.min(MAX_SIZE.1).to_string());
         }
     }
 
