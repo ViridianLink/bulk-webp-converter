@@ -1,6 +1,6 @@
 [package]
 name = "image_converter"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,5 +14,5 @@ webp = "0.2"
 [profile.release]
 lto = true
 codegen-units = 1
-panic = "abort"
+# panic = "abort"
 strip = "symbols"
