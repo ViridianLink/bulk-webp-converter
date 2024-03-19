@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "0.24"
-rayon = "1"
-walkdir = "2"
-webp = "0.2"
+image = "*"
+rayon = "*"
+walkdir = "*"
+webp = "*"
 
 [profile.release]
 lto = true
