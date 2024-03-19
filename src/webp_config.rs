@@ -8,8 +8,6 @@ pub fn config() -> WebPConfig {
 
     if QUALITY == 100.0 {
         webp_config.lossless = 1;
-    } else {
-        webp_config.near_lossless = 60;
     }
 
     webp_config

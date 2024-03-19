@@ -13,8 +13,6 @@ pub fn convert_with_cwebp(image_path: &Path) -> Result<(), io::Error> {
 
     if QUALITY == 100.0 {
         command.arg("-lossless");
-    } else {
-        command.arg("-near_lossless").arg("60");
     }
 
     if let Ok(image) = image::open(image_path) {
