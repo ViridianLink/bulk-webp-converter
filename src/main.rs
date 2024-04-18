@@ -10,12 +10,11 @@ use std::sync::Arc;
 use std::{fs, io};
 use walkdir::{DirEntry, WalkDir};
 
-const DIRECTORY: &str = r"D:\Crimson Sky\College Kings\College-Kings\game\";
-pub const QUALITY: f32 = 100.0;
-pub const MAX_SIZE: (u32, u32) = (1920, 1080);
-// Only affects images with the same aspect ratio
-// pub const FILTER: [&str; 3] = ["png", "jpg", "jpeg"];
+const DIRECTORY: &str = r"D:\Crimson Sky\College Kings\college-kings-2-main\game\images";
+pub const QUALITY: f32 = 95.0;
+pub const MAX_SIZE: (u32, u32) = (1920, 1080); // Only affects images with the same aspect ratio
 pub const FILTER: [&str; 1] = ["webp"];
+// pub const FILTER: [&str; 3] = ["png", "jpg", "jpeg"];
 
 fn run(entries: Vec<DirEntry>, converter: fn(&Path) -> Result<(), io::Error>) -> Vec<DirEntry> {
     let counter = Arc::new(AtomicUsize::new(0));
