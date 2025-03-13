@@ -51,12 +51,10 @@ fn cli() -> Command {
         .version("1.0.0")
         .about("Converts a folder of images to WebP")
         .arg(
-            arg!(<DIRECTORY> "The directory to convert"), // Arg::new("directory")
-                                                          //     .short('d')
-                                                          //     .long("directory")
-                                                          //     .num_args(1)
-                                                          //     .required(true)
-                                                          //     .help("The directory to convert"),
+            Arg::new("directory")
+                .index(1)
+                .required(true)
+                .help("The directory to convert"),
         )
         .arg(
             Arg::new("quality")
@@ -89,7 +87,7 @@ fn cli() -> Command {
 fn main() {
     let mut matches = cli().get_matches();
 
-    let directory = matches.remove_one::<String>("DIRECTORY").unwrap();
+    let directory = matches.remove_one::<String>("directory").unwrap();
 
     let quality = matches
         .remove_one::<String>("quality")
