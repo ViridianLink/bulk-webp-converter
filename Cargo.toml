@@ -1,18 +1,19 @@
 [package]
 name = "image_converter"
 version = "0.3.0"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "*"
-rayon = "*"
-walkdir = "*"
-webp = "*"
+image = { version = "*", default-features = false }
+rayon = { version = "*", default-features = false }
+walkdir = { version = "*", default-features = false }
+webp = { version = "*", default-features = false }
+clap = { version = "*", default-features = false, features = ["std"] }
 
 [profile.release]
 lto = true
 codegen-units = 1
-# panic = "abort"
+panic = "abort"
 strip = "symbols"
