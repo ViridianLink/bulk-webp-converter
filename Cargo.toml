@@ -1,6 +1,6 @@
 [package]
 name = "image_converter"
-version = "0.3.0"
+version = "1.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,7 +10,7 @@ image = { version = "*", default-features = false }
 rayon = { version = "*", default-features = false }
 walkdir = { version = "*", default-features = false }
 webp = { version = "*", default-features = false }
-clap = { version = "*", default-features = false, features = ["std"] }
+clap = { version = "*", default-features = false, features = ["std", "derive"] }
 
 [profile.release]
 lto = true

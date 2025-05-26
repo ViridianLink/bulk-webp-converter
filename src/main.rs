@@ -1,136 +1,93 @@
+// mod libwebp_sys_converter;
 mod cwebp_converter;
-mod libwebp_sys_converter;
-mod webp_config;
-
-use clap::builder::Str;
-use clap::{Arg, ArgMatches, Command, arg};
 use cwebp_converter::convert_with_cwebp;
+
+use clap::Parser;
 use rayon::prelude::*;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{fs, io};
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
-// const DIRECTORY: &str = r"C:\Users\Oscar Six\Downloads\73,88,98";
-// pub const QUALITY: f32 = 100.0;
-// pub const MAX_SIZE: (u32, u32) = (1920, 1080); // Only affects images with the same aspect ratio
+#[derive(Parser, Debug)]
+#[clap(
+    name = "batch-webp",
+    version = "1.0.0",
+    about = "Converts a folder of images to WebP"
+)]
+struct Cli {
+    #[clap(help = "The directory to convert")]
+    directory: PathBuf,
 
-// pub const FILTER: [&str; 4] = ["png", "jpg", "jpeg", "webp"];
+    #[clap(
+        short,
+        long,
+        default_value_t = 75.0,
+        help = "The quality of the WebP image (0-100)"
+    )]
+    quality: f32,
 
-fn run<F>(entries: Vec<DirEntry>, converter: F) -> Vec<DirEntry>
+    #[clap(short, long, num_args = 2, value_names = ["WIDTH", "HEIGHT"], help = "The maximum dimensions (width height) of the WebP image")]
+    max_size: Option<Vec<u32>>,
+
+    #[clap(short, long, value_delimiter = ',', default_values_t = ["png", "jpg", "jpeg"].iter().map(|s| s.to_string()).collect::<Vec<_>>(), help = "Comma-separated list of formats to convert (e.g., png,jpg)")]
+    formats: Vec<String>,
+}
+
+fn run<F>(entries: Vec<PathBuf>, converter: F) -> std::io::Result<()>
 where
     F: Fn(&Path) -> Result<(), io::Error> + Sync,
 {
     let counter = Arc::new(AtomicUsize::new(1));
     let total = entries.len();
 
-    entries
-        .into_par_iter()
-        .filter_map(|entry| {
-            let path = entry.path();
+    entries.into_par_iter().try_for_each(|path| {
+        if let Err(e) = converter(&path) {
+            println!("Failed to convert: {path:?} | {e}")
+        } else {
+            if path.extension().unwrap_or_default() != "webp" {
+                fs::remove_file(path)?;
+            }
+            println!("{} / {}", counter.fetch_add(1, Ordering::Relaxed), total);
+        }
 
-            let rv = match converter(path) {
-                Ok(_) => {
-                    if path.extension().unwrap() != "webp" {
-                        fs::remove_file(path).expect("Failed to remove file");
-                    }
-                    None
-                }
-                Err(_) => Some(entry),
-            };
+        std::io::Result::Ok(())
+    })?;
 
-            println!("{} / {}", counter.fetch_add(1, Ordering::SeqCst), total);
-            rv
-        })
-        .collect()
-}
-
-fn cli() -> Command {
-    Command::new("batch-webp")
-        .version("1.0.0")
-        .about("Converts a folder of images to WebP")
-        .arg(
-            Arg::new("directory")
-                .index(1)
-                .required(true)
-                .help("The directory to convert"),
-        )
-        .arg(
-            Arg::new("quality")
-                .short('q')
-                .long("quality")
-                .num_args(1)
-                .required(false)
-                .default_value("100.0")
-                .help("The quality of the WebP image"),
-        )
-        .arg(
-            Arg::new("max_size")
-                .short('m')
-                .long("max_size")
-                .num_args(2)
-                .required(false)
-                .help("The maximum size of the WebP image"),
-        )
-        .arg(
-            Arg::new("formats")
-                .short('f')
-                .long("formats")
-                .num_args(0..)
-                .required(false)
-                .default_values(["png", "jpg", "jpeg", "webp"])
-                .help("The formats to convert"),
-        )
+    Ok(())
 }
 
 fn main() {
-    let mut matches = cli().get_matches();
+    let cli = Cli::parse();
 
-    let directory = matches.remove_one::<String>("directory").unwrap();
+    let max_size = cli.max_size.as_ref().map(|vals| (vals[0], vals[1]));
 
-    let quality = matches
-        .remove_one::<String>("quality")
-        .unwrap()
-        .parse::<f32>()
-        .unwrap();
-    let max_size = parse_max_size(&mut matches);
+    println!("Directory: {:?}", cli.directory);
+    println!("Quality: {}", cli.quality);
+    if let Some(size) = cli.max_size {
+        println!("Max size: {size:?}");
+    }
+    println!("Formats: {:?}", cli.formats);
 
-    let formats: Vec<String> = matches.get_many("formats").unwrap().cloned().collect();
-
-    println!("Directory: {}", directory);
-    println!("Quality: {}", quality);
-    println!("Max size: {:?}", max_size);
-    println!("Formats: {:?}", formats);
-
-    let paths: Vec<DirEntry> = WalkDir::new(directory)
+    let paths = WalkDir::new(cli.directory)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            formats.contains(
-                &e.path()
+        .map(|e| e.into_path())
+        .filter(|path| {
+            cli.formats.contains(
+                &path
                     .extension()
                     .and_then(|ext| ext.to_str())
                     .unwrap_or_default()
                     .to_string(),
             )
         })
-        .collect();
+        .collect::<Vec<_>>();
 
-    let fails = run(paths, |path| convert_with_cwebp(path, quality, max_size));
+    let fails = run(paths, |path| {
+        convert_with_cwebp(path, cli.quality, max_size)
+    });
 
     println!("Failed to convert: {:?}", fails);
-}
-
-fn parse_max_size(matches: &mut ArgMatches) -> Option<(u32, u32)> {
-    let width = match matches.remove_one::<String>("max_size") {
-        Some(s) => s.parse().unwrap(),
-        None => return None,
-    };
-    let height = match matches.remove_one::<String>("max_size") {
-        Some(s) => s.parse().unwrap(),
-        None => return None,
-    };
-
-    Some((width, height))
 }
